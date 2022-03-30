@@ -13,3 +13,6 @@ void admin_menu(SOCKET s);
 void user_menu(SOCKET s);
 template <class T>
 int check(T num);
+void menu_paired_method(SOCKET s);
+void menu_succesive_method(SOCKET s);
+void user_manage_menu(SOCKET s);

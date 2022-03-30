@@ -38,3 +38,6 @@ public:
 void main_func(SOCKET newSocket);
 void admin_menu(SOCKET newSocket);
 void user_menu(SOCKET newSocket);
+void user_manage_menu(SOCKET newSocket);
+void menu_succesive_method(SOCKET newSocket);
+void menu_paired_method(SOCKET newSocket);

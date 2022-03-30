@@ -1,6 +1,5 @@
 #include "myLibCP4_s.h"
  
-//доделать с сокетом!!
 User::User(int id, string l, string p, SOCKET s) {
     ID = id;
     login = l;
@@ -34,30 +33,124 @@ MarketSegment::MarketSegment() {
 	consumers_percent = 0;
 }
 
-void admin_menu(SOCKET newSocket) {
+//-МЕТОД ПАРНЫХ СРАВНЕНИЙ-
+void menu_paired_method(SOCKET newSocket) {
 	char choice[50];
 	while (1) {
+		system("cls");
 		recv(newSocket, choice, sizeof(choice), 0);
 		switch (choice[0]) {
 		case '1': {
+			cout << "\nМатрица бинарных предпочтений\n";
 			break;
 		}
 		case '2': {
+			cout << "\nРедактировать матрицу\n";
 			break;
 		}
 		case '3': {
+			cout << "\nПроизвести расчеты\n";
 			break;
 		}
 		case '4': {
+			return;
+		}
+		}
+
+	}
+}
+
+//-МЕТОД ПОСЛЕДОВАТЕЛЬНЫХ СРАВНЕНИЙ-
+void menu_succesive_method(SOCKET newSocket) {
+	char choice[50];
+	while (1) {
+		system("cls");
+		recv(newSocket, choice, sizeof(choice), 0);
+
+		switch (choice[0]) {
+		case '1': {
+			cout << "\nРедактировать предварительные оценки\n";
+			break;
+		}
+		case '2': {
+			cout << "\nСравнить сегменты рынка\n";
+			break;
+		}
+		case '3': {
+			cout << "\nПроизвести расчеты\n";
+			break;
+		}
+		case '4': {
+			return;
+		}
+		}
+	}
+}
+
+void user_manage_menu(SOCKET newSocket) {
+	char choice[50];
+
+	while (true) {
+		system("cls");
+		recv(newSocket, choice, sizeof(choice), 0);
+
+		switch (choice[0]) {
+		case '1': {
+			cout << "\nДобавить пользователя\n";
+			break;
+		}
+		case '2': {
+			cout << "\nРедактировать данные пользователя\n";
+			break;
+		}
+		case '3': {
+			cout << "\nУдалить пользователя\n";
+			break;
+		}
+		case '4': {
+			cout << "\nПросмотреть данные в табличной форме\n";
 			break;
 		}
 		case '5': {
+			return;
+		}
+		}
+	}
+}
+
+
+void admin_menu(SOCKET newSocket) {
+	char choice[50];
+	while (1) {
+		system("cls");
+		recv(newSocket, choice, sizeof(choice), 0);
+		switch (choice[0]) {
+		case '1': {
+			cout << "\nПросмотреть данные о сегментах рынка в табличной форме\n";
+			break;
+		}
+		case '2': {
+			menu_paired_method(newSocket);
+			break;
+		}
+		case '3': {
+			menu_succesive_method(newSocket);
+			break;
+		}
+		case '4': {
+			cout << "\nДобавить сегмент\n";
+			break;
+		}
+		case '5': {
+			cout << "\nРедактировать данные о сегментах\n";
 			break;
 		}
 		case '6': {
+			cout << "\nУдалить сегмент из списка\n";
 			break;
 		}
 		case '7': {
+			user_manage_menu(newSocket);
 			break;
 		}
 		case '8': {
@@ -71,21 +164,24 @@ void admin_menu(SOCKET newSocket) {
 void user_menu(SOCKET newSocket) {
 	char choice[50];
 	while (1) {
+		system("cls");
 		recv(newSocket, choice, sizeof(choice), 0);
 		switch (choice[0]) {
 		case '1': {
+			cout << "\nПросмотреть данные в табличной форме\n";
 			break;
 		}
 		case '2': {
+			menu_paired_method(newSocket);
 			break;
 		}
 		case '3': {
+			menu_succesive_method(newSocket);
 			break;
 		}
 		case '4': {
 			return;
 		}
-
 		}
 	}
 
