@@ -2,7 +2,9 @@
 #include "myLib_c1.h"
 
 int main() {
-	setlocale(0, "");
+	SetConsoleCP(1251);
+	SetConsoleOutputCP(1251);
+
 	WSADATA wsaData;
 	WORD wVersionRequested = MAKEWORD(2, 2);
 	if (WSAStartup(wVersionRequested, &wsaData)) {
@@ -21,8 +23,7 @@ int main() {
 		exit(1);
 	}
 	cout << "Вы успешно подключились к серверу\n";
+	Sleep(500);
 	main_menu(s);
-
-	system("pause");
 	return 0;
 }

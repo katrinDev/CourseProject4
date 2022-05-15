@@ -1,9 +1,9 @@
 #pragma comment(lib, "ws2_32.lib")
 #include "myLibCP4_s.h"
 
-
 int main(){
 	setlocale(0, "");
+
 	WSADATA wsaData;
 	WORD wVersionRequested = MAKEWORD(2, 2);
 	if (WSAStartup(wVersionRequested, &wsaData)) {
@@ -26,10 +26,11 @@ int main(){
 		SOCKET newSocket = accept(s, (struct sockaddr*)&remote, &sizeRemote);
 		if (newSocket == 0)
 			cerr << "Ошибка в подключении клиента!\n";
-		else
-			cout << "Новое соединение установлено\n";
-		main_func(newSocket);
+		else {
+			cout << "Новое соединение установлено, сокет " << newSocket << endl;
+			main_func(newSocket);
+		}
 	}
-	system("pause");
 	return 0;
 }
+
