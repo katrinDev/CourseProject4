@@ -109,6 +109,23 @@ istream& operator>>(istream& s, SegmentProfitability& profitability) {
 
 void admin_menu(SOCKET newSocket) {
 	char choice[50];
+	map<int, int> estimates;
+	int size = MarketSegment::id;
+	vector<vector<int>> matrix(size, vector<int>(size));
+	try {
+		ifstream file("Matrix.txt");
+		if (!file)
+			throw(FileException());
+		for (int i = 0; i < size; i++)
+			for (int j = 0; j < size; j++) {
+				if (i != j)
+					file >> matrix[i][j];
+			}
+	}
+	catch (const Exception& exception) {
+		cout << exception.get_error();
+		return;
+	}
 	while (1) {
 		recv(newSocket, choice, sizeof(choice), 0);
 		switch (choice[0]) {
@@ -117,15 +134,20 @@ void admin_menu(SOCKET newSocket) {
 			break;
 		}
 		case '2': {
-			menu_paired_method(newSocket);
+			menu_paired_method(newSocket, matrix, estimates);
 			break;
 		}
 		case '3': {
-			menu_succesive_method(newSocket);
+			if (estimates.empty())
+				send(newSocket, "no", sizeof("no"), 0);
+			else {
+				send(newSocket, "good", sizeof("good"), 0);
+				menu_succesive_method(newSocket, estimates);
+			}
 			break;
 		}
 		case '4': {
-			add_segments(newSocket);
+			add_segments(newSocket, matrix);
 			break;
 		}
 		case '5': {
@@ -133,7 +155,7 @@ void admin_menu(SOCKET newSocket) {
 			break;
 		}
 		case '6': {
-			delete_segments(newSocket);
+			delete_segments(newSocket, matrix);
 			break;
 		}
 		case '7': {
@@ -143,15 +165,30 @@ void admin_menu(SOCKET newSocket) {
 		case '8': {
 			return;
 		}
-
 		}
 	}
 }
 
 void user_menu(SOCKET newSocket) {
 	char choice[50];
+	map<int, int> estimates;
+	int size = MarketSegment::id;
+	vector<vector<int>> matrix(size, vector<int>(size));
+	try {
+		ifstream file("Matrix.txt");
+		if (!file)
+			throw(FileException());
+		for (int i = 0; i < size; i++)
+			for (int j = 0; j < size; j++) {
+				if (i != j)
+					file >> matrix[i][j];
+			}
+	}
+	catch (const Exception& exception) {
+		cout << exception.get_error();
+		return;
+	}
 	while (1) {
-		system("cls");
 		recv(newSocket, choice, sizeof(choice), 0);
 		switch (choice[0]) {
 		case '1': {
@@ -159,11 +196,16 @@ void user_menu(SOCKET newSocket) {
 			break;
 		}
 		case '2': {
-			menu_paired_method(newSocket);
+			menu_paired_method(newSocket, matrix, estimates);
 			break;
 		}
 		case '3': {
-			menu_succesive_method(newSocket);
+			if (estimates.empty())
+				send(newSocket, "no", sizeof("no"), 0);
+			else {
+				send(newSocket, "good", sizeof("good"), 0);
+				menu_succesive_method(newSocket, estimates);
+			}
 			break;
 		}
 		case '4': {
@@ -212,22 +254,22 @@ void main_func(SOCKET newSocket) {
 }
 
 //-МЕТОД ПАРНЫХ СРАВНЕНИЙ-
-void menu_paired_method(SOCKET newSocket) {
+void menu_paired_method(SOCKET newSocket, vector<vector<int>>& matrix, map<int, int>& estimates) {
+	
 	char choice[50];
 	while (1) {
-		system("cls");
 		recv(newSocket, choice, sizeof(choice), 0);
 		switch (choice[0]) {
 		case '1': {
-			cout << "\nМатрица бинарных предпочтений\n";
+			show_matrix(newSocket, matrix);
 			break;
 		}
 		case '2': {
-			cout << "\nРедактировать матрицу\n";
+			edit_matrix(newSocket, matrix);
 			break;
 		}
 		case '3': {
-			cout << "\nПроизвести расчеты\n";
+			make_paired_calculations(newSocket, matrix, estimates);
 			break;
 		}
 		case '4': {
@@ -239,23 +281,22 @@ void menu_paired_method(SOCKET newSocket) {
 }
 
 //-МЕТОД ПОСЛЕДОВАТЕЛЬНЫХ СРАВНЕНИЙ-
-void menu_succesive_method(SOCKET newSocket) {
+void menu_succesive_method(SOCKET newSocket, map<int, int>& estimates) {
 	char choice[50];
 	while (1) {
-		system("cls");
 		recv(newSocket, choice, sizeof(choice), 0);
 
 		switch (choice[0]) {
 		case '1': {
-			cout << "\nРедактировать предварительные оценки\n";
+			show_estimates(newSocket, estimates);
 			break;
 		}
 		case '2': {
-			cout << "\nСравнить сегменты рынка\n";
+			edit_estimates(newSocket, estimates);
 			break;
 		}
 		case '3': {
-			cout << "\nПроизвести расчеты\n";
+			make_succesive_calculations(newSocket, estimates);
 			break;
 		}
 		case '4': {
@@ -269,7 +310,6 @@ void user_manage_menu(SOCKET newSocket) {
 	char choice[50];
 
 	while (true) {
-		system("cls");
 		recv(newSocket, choice, sizeof(choice), 0);
 
 		switch (choice[0]) {
@@ -367,7 +407,7 @@ void authentication(SOCKET socket, int who) {
 				recv(socket, login, sizeof(login), 0);
 				recv(socket, password, sizeof(password), 0);
 				bool a = false;
-				for (auto it = User::users.begin(); it != User::users.end(); it++) {//ИТЕРАТОРЫ
+				for (auto it = User::users.begin(); it != User::users.end(); it++) {
 					if (((who == 1 && it->first == 1) || who == 2) && (it->second.login == login && it->second.password == password)) {
 						a = true;
 						user.set(socket, login, password);
@@ -393,6 +433,7 @@ void authentication(SOCKET socket, int who) {
 	}
 	catch (const Exception& exception) {
 		cout << exception.get_error();
+		Sleep(1000);
 	}
 	return;
 }
@@ -509,7 +550,7 @@ void show_segments(SOCKET s) {
 	}
 }
 
-void add_segments(SOCKET s) {
+void add_segments(SOCKET s, vector<vector<int>>& matrix) {
 	show_segments(s);
 	char name[50], export_percent[10], consumers[10], suppliers[10], rate_of_return[10], roi[10];
 	int exp, c, suppliers_int, ror, roi_int;
@@ -530,9 +571,34 @@ void add_segments(SOCKET s) {
 	MarketSegment segment(name, exp, c, suppliers_int, profit);
 	MarketSegment::add_segment(segment);
 	MarketSegment::file_input();
+
+	show_segments(s);
+	show_matrix(s, matrix);
+
+	char id_new_char[10], value_char[2];
+	int id_new = MarketSegment::id, value;
+	_itoa(id_new, id_new_char, 10);
+
+	send(s, id_new_char, sizeof(id_new_char), 0);
+
+	matrix.resize(id_new);
+	int new_index = id_new - 1;
+
+	matrix[new_index].resize(id_new);
+
+	for (int i = 0; i < new_index; i++) {
+		matrix[i].resize(id_new);
+		recv(s, value_char, sizeof(value_char), 0);
+		value = atoi(value_char);
+		matrix[new_index][i] = value;
+		!value ? matrix[i][new_index] = 1 : matrix[i][new_index] = 0;
+	}
+
+	matrix_file_input(matrix);
 }
 
-void delete_segments(SOCKET s) {
+
+void delete_segments(SOCKET s, vector<vector<int>>& matrix){
 	char buf[50], n[5];
 	int ID;
 	show_segments(s);
@@ -546,6 +612,12 @@ void delete_segments(SOCKET s) {
 			send(s, "cool", sizeof("cool"), 0);
 			MarketSegment::delete_segment(ID);
 			MarketSegment::file_input();
+
+			ID = MarketSegment::id;
+			matrix.resize(ID);
+			for (int i = 0; i < ID; i++)
+				matrix[i].resize(ID);
+			matrix_file_input(matrix);
 			break;
 		}
 		catch (const ConformityException& exception) {
@@ -623,4 +695,209 @@ void edit_segments(SOCKET s) {
 				break;
 		}
 	}
+}
+
+
+void show_matrix(SOCKET s, const vector<vector<int>>& matrix) {
+	char n[5], value[10];
+	_itoa(matrix.size(), n, 10);
+	send(s, n, sizeof(n), 0);
+
+	for (auto it = matrix.begin(); it != matrix.end(); it++) {
+		for (auto inner_it = it->begin(); inner_it != it->end(); inner_it++) {
+			_itoa(*inner_it, value, 10);
+			send(s, value, sizeof(value), 0);
+		}
+	}
+}
+
+
+void edit_matrix(SOCKET s, vector<vector<int>>& matrix) {
+	char n[5], i_char[10], j_char[10];
+	int i, j;
+	show_matrix(s, matrix);
+
+	_itoa(matrix.size(), n, 10);
+	send(s, n, sizeof(n), 0);
+	
+	recv(s, i_char, sizeof(i_char), 0);
+	i = atoi(i_char);
+	recv(s, j_char, sizeof(j_char), 0);
+	j = atoi(j_char);
+
+	i--; j--;
+	if (!matrix[i][j]) {
+		matrix[i][j] = 1;
+		matrix[j][i] = 0;
+	}
+	else {
+		matrix[i][j] = 0;
+		matrix[j][i] = 1;
+	}
+
+	matrix_file_input(matrix);
+}
+
+void matrix_file_input(const vector<vector<int>>& matrix) {
+	ofstream file("Matrix.txt");
+	for (unsigned int i = 0; i < matrix.size(); i++) {
+		for (unsigned int j = 0; j < matrix[i].size(); j++) {
+			if(i != j)
+				file << matrix[i][j] << "   ";
+		}
+		file << endl;
+	}
+	file.close();
+}
+
+void make_paired_calculations(SOCKET s, const vector<vector<int>>& matrix, map<int, int>& estimates){
+	//определяем цену выбора для каждого сегмента
+	char cost_char[10], n_char[10];
+	unsigned int n = matrix.size();
+
+	_itoa(n, n_char, 10);
+	send(s, n_char, sizeof(n_char), 0);
+
+	vector<int> costs(n);
+	int sum = 0;
+	for (unsigned int i = 0; i < n; i++) {
+		for (unsigned int j = 0; j < matrix[i].size(); j++) {
+			costs[i] += matrix[i][j];
+		}
+		_itoa(costs[i], cost_char, 10);
+		send(s, cost_char, sizeof(cost_char), 0);
+		sum += costs[i];
+	}
+
+	map<float, int> weights;
+	char weight_char[10];
+	float weight_float;
+
+	//определяем вес выбора для каждого сегмента рынка
+	for (unsigned int i = 0; i < n; i++) {
+		weight_float = float(costs[i]) / float(sum);
+		sprintf(weight_char, "%.2f", weight_float);
+		send(s, weight_char, sizeof(weight_char), 0);
+
+		weights.insert(make_pair(weight_float, i + 1));
+	}
+	
+	//отправляем итоговую последовательность
+	char str[30] = "";
+	stringstream ss;
+	for (auto it = weights.rbegin(); it != weights.rend(); it++) {
+		ss << "C" << it->second;
+		
+		if(it != --weights.rend())
+			ss << ",";
+	}
+	ss >> str;
+	send(s, str, sizeof(str), 0);
+
+	//заполнение предварительных оценок
+	const int diff = 100 / weights.size();
+	int id = 0, i = 0;
+	for (auto it = weights.rbegin(); it != weights.rend(); it++) {
+		id = it->second;
+		estimates.insert(make_pair(id, 100 - diff * i));
+		i++;
+	}
+}
+
+void show_estimates(SOCKET s, map<int, int>& estimates) {
+	char n[10], id_char[10], estimate_char[10];
+
+	_itoa(estimates.size(), n, 10);
+	send(s, n, sizeof(n), 0);
+	for (auto it = estimates.begin(); it != estimates.end(); it++) {
+		_itoa(it->first, id_char, 10);
+		send(s, id_char, sizeof(id_char), 0);
+		_itoa(it->second, estimate_char, 10);
+		send(s, estimate_char, sizeof(estimate_char), 0);
+	}
+}
+
+void edit_estimates(SOCKET s, map<int, int>& estimates) {
+	char id_char[10], new_estimate_char[10], buf[50], answer[5];
+	int id, new_estimate, old_estimate;
+	show_segments(s);
+	show_estimates(s, estimates);
+
+	vector<int> near_estimates;
+	for (auto it = estimates.begin(); it != estimates.end(); it++) {
+		near_estimates.push_back(it->second);
+	}
+	sort(near_estimates.begin(), near_estimates.end());
+
+
+	recv(s, id_char, sizeof(id_char), 0);
+	id = atoi(id_char);
+
+	while (1) {
+		try {
+			recv(s, new_estimate_char, sizeof(new_estimate_char), 0);
+			new_estimate = atoi(new_estimate_char);
+
+			old_estimate = estimates[id];
+
+			int before = 0, after = 0;
+			for (auto it = near_estimates.begin(); it != near_estimates.end(); it++) {
+				if (*it == old_estimate) {
+					before = *(it - 1);
+					after = *(it + 1);
+					break;
+				}
+			}
+
+			if (new_estimate < before || new_estimate > after)
+				throw ConformityException();
+			send(s, "cool", sizeof("cool"), 0);
+			estimates[id] = new_estimate;
+			break;
+		}
+		catch (const ConformityException& exception) {
+			strcpy(buf, exception.get_error().c_str());
+			send(s, buf, sizeof(buf), 0);
+			recv(s, answer, sizeof(answer), 0);
+			if (answer == "n")
+				break;
+		}
+	}
+		
+}
+
+void make_succesive_calculations(SOCKET s, map<int, int>& estimates) {
+	char weight_char[10], n_char[10];
+	float weight_float;
+
+	unsigned int n = estimates.size();
+	_itoa(n, n_char, 10);
+	send(s, n_char, sizeof(n_char), 0);
+
+	int sum = 0;
+	for (auto it = estimates.begin(); it != estimates.end(); it++) {
+		sum += it->second;
+	}
+	map<float, int> weights;
+
+	//определяем вес выбора для каждого сегмента рынка
+	for (unsigned int i = 1; i <= estimates.size(); i++) {
+		weight_float = float(estimates[i]) / float(sum);
+		sprintf(weight_char, "%.2f", weight_float);
+		send(s, weight_char, sizeof(weight_char), 0);
+
+		weights.insert(make_pair(weight_float, i));
+	}
+
+	//отправляем итоговую последовательность
+	char str[30] = "";
+	stringstream ss;
+	for (auto it = weights.rbegin(); it != weights.rend(); it++) {
+		ss << "C" << it->second;
+
+		if (it != --weights.rend())
+			ss << ",";
+	}
+	ss >> str;
+	send(s, str, sizeof(str), 0);
 }

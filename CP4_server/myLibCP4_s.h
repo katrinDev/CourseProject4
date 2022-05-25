@@ -5,9 +5,11 @@
 #include <iostream>
 #include <winsock2.h>
 #include <fstream>
-#include <iomanip>
 #include <map>
 #include <string>
+#include <vector>
+#include <sstream>
+#include <algorithm>
 
 using namespace std;
 
@@ -54,9 +56,9 @@ public:
 
 class MarketSegment {
 	string name;
-	int export_percent;//какой процент экспортируется
-	int consumers_percent;//какой процент от общего числа потребителей предпочитают
-	int number_of_suppliers;//количество поставщиков таких товаров
+	int export_percent;
+	int consumers_percent;
+	int number_of_suppliers;
 	SegmentProfitability segment_profit;
 public:
 	MarketSegment(string name = "unspecified", int export_percent = 0, int consumers = 0, int suppliers = 0, SegmentProfitability profit = SegmentProfitability());
@@ -108,8 +110,6 @@ void main_func(SOCKET newSocket);
 void admin_menu(SOCKET newSocket);
 void user_menu(SOCKET newSocket);
 void user_manage_menu(SOCKET newSocket);
-void menu_succesive_method(SOCKET newSocket);
-void menu_paired_method(SOCKET newSocket);
 string encryption(string password, int num);
 
 void authentication(SOCKET socket, int who);
@@ -124,6 +124,17 @@ ostream& operator <<(ostream& s, User& user);
 ostream& operator <<(ostream& s, MarketSegment& segment);
 ostream& operator<<(ostream& s, SegmentProfitability& profitability);
 void show_segments(SOCKET s);
-void add_segments(SOCKET s);
+void add_segments(SOCKET s, vector<vector<int>>& matrix);
 void edit_segments(SOCKET s);
-void delete_segments(SOCKET s);
+void delete_segments(SOCKET s, vector<vector<int>>& matrix);
+
+void menu_paired_method(SOCKET newSocket, vector<vector<int>>& matrix, map<int, int>& estimates);
+void show_matrix(SOCKET s, const vector<vector<int>>& matrix);
+void edit_matrix(SOCKET s, vector<vector<int>>& matrix);
+void make_paired_calculations(SOCKET s, const vector<vector<int>>& matrix, map<int, int>& estimates);
+void matrix_file_input(const vector<vector<int>>& matrix);
+
+void menu_succesive_method(SOCKET newSocket, map<int, int>& estimates);
+void edit_estimates(SOCKET s, map<int, int>& estimates);
+void make_succesive_calculations(SOCKET s, map<int, int>& estimates);
+void show_estimates(SOCKET s, map<int, int>& estimates);

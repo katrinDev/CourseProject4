@@ -75,6 +75,7 @@ void admin_menu(SOCKET s) {
 
         switch (choice_i) {
         case 1: {
+            system("cls");
             show_segments(s);
             system("pause");
             break;
@@ -84,18 +85,28 @@ void admin_menu(SOCKET s) {
             break;
         }
         case 3: {
-            menu_succesive_method(s);
+            char answer[10];
+            recv(s, answer, sizeof(answer), 0);
+            if(!strcmp(answer, "good"))
+                menu_succesive_method(s);
+            else {
+                cout << "\nНеобходимы данные из расчетов метода парных сравнений!\n";
+                Sleep(1500);
+            }
             break;
         }
         case 4: {
+            system("cls");
             add_segments(s);
             break;
         }
         case 5: {
+            system("cls");
             edit_segments(s);
             break;
         }
         case 6: {
+            system("cls");
             delete_segments(s);
             break;
         }
@@ -140,7 +151,9 @@ void user_menu(SOCKET s) {
 
         switch (choice_i) {
         case 1: {
+            system("cls");
             show_segments(s);
+            system("pause");
             break;
         }
         case 2: {
@@ -241,18 +254,20 @@ void menu_paired_method(SOCKET s) {
 
         if(choice_i >=1 && choice_i <= 4)
             send(s, choice, sizeof(choice), 0);
-
+        system("cls");
         switch (choice_i) {
         case 1: {
-            cout << "\nМатрица бинарных предпочтений\n";
+            show_matrix(s);
+            system("pause");
             break;
         }
         case 2: {
-            cout << "\nРедактировать матрицу\n";
+            edit_matrix(s);
             break;
         }
         case 3: {
-            cout << "\nПроизвести расчеты\n";
+            make_paired_calculations(s);
+            system("pause");
             break;
         }
         case 4: {
@@ -277,11 +292,11 @@ void menu_succesive_method(SOCKET s) {
         system("cls");
 
         cout << "\n";
-        cout << "\tМетод последовательных сравнений" << endl;
+        cout << "     Метод последовательных сравнений" << endl;
         cout << "* * * * * * * * * * * * * * * * * * * * * \n\n";
-        cout << "1. Редактировать предварительные оценки\n";
+        cout << "1. Просмотреть предварительные оценки\n";
         cout << "2. Сравнить сегменты рынка\n";
-        cout << "3. Произвести расчеты\n\n";
+        cout << "3. Произвести расчеты\n";
         cout << "4. Выход\n" << endl;
         do {
             cout << "   Ваш выбор: ";
@@ -295,16 +310,20 @@ void menu_succesive_method(SOCKET s) {
 
         switch (choice_i) {
         case 1: {
-            cout << "\nРедактировать предварительные оценки\n";
+            system("cls");
+            show_estimates(s);
+            cout << endl;
+            system("pause");
             break;
         }
         case 2: {
-            cout << "\nСравнить сегменты рынка\n";
-
+            system("cls");
+            edit_estimates(s);
             break;
         }
         case 3: {
-            cout << "\nПроизвести расчеты\n";
+            make_succesive_calculations(s);
+            system("pause");
             break;
         }
         case 4: {
@@ -427,7 +446,7 @@ void add_users(SOCKET s) {
             break;
         }
         catch (const InputException& exception) {
-            cout << exception.get_error() << endl;
+            cout << exception.get_error();
         }
     }
     cout << "-------------------------------\n";
@@ -535,7 +554,6 @@ void show_segments(SOCKET s) {
     recv(s, size, sizeof(size), 0);
     n = atoi(size);
 
-    system("cls");
     cout << "\n\t\t\t\t    Сегменты рынка\n";
     cout << "-----------------------------------------------------------------------------------------\n";
     cout << "| ID |        Название        | Экспорт | Потребители |   Кол-во    |   Норма   |  ROI  |\n";
@@ -583,7 +601,7 @@ void add_segments(SOCKET s) {
             cin >> ror;
             if (!check(ror))
                 throw InputException();
-            cout << "Доходность на вложенный капитал (ROI): ";
+            cout << "Рентабельность инвестиций (ROI): ";
             cin >> roi_int;
             if (!check(roi_int))
                 throw InputException();
@@ -608,7 +626,39 @@ void add_segments(SOCKET s) {
     }
     cout << "-------------------------------\n";
     cout << "Сегмент рынка был успешно добавлен\n";
-    Sleep(1000);
+    Sleep(2000);
+    system("cls");
+    cout << "\nНеобходимо также внести изменения в матрицу бинарных предпочтений!\n";
+    show_segments(s);
+    cout << endl;
+    show_matrix(s);
+
+    char id_new_char[10], value_char[2];
+    int id_new, value;
+    recv(s, id_new_char, sizeof(id_new_char), 0);
+    id_new = atoi(id_new_char);
+    cout << "\nВведите значения (1 или 0) для следующих новых ячеек:\n";
+
+    while(1){
+        try {
+            for (int i = 1; i < id_new; i++) {
+                cout << "matrix [" << id_new << "][" << i << "] = ";
+                cin >> value;
+                if (value != 1 && value != 0)
+                    throw InputException();
+                _itoa(value, value_char, 10);
+                send(s, value_char, sizeof(value_char), 0);
+            }
+            break;
+        }
+        catch (const InputException& exception) {
+            cout << exception.get_error() << endl;
+        }
+    }
+    
+    cout << "------------------------------------\n";
+    cout << "Матрица успешно изменена\n";
+    Sleep(1500);
 }
 
 
@@ -717,4 +767,216 @@ void edit_segments(SOCKET s) {
             cout << "Попробуйте еще раз :)";
         }
     }
+}
+
+void show_matrix(SOCKET s) {
+    int n;
+    char size[5], value_char[10];
+    recv(s, size, sizeof(size), 0);
+    n = atoi(size);
+
+    vector<vector<int>> matrix(n, vector<int>(n));
+
+    for (auto it = matrix.begin(); it != matrix.end(); it++) {
+        for (auto inner_it = it->begin(); inner_it != it->end(); inner_it++) {
+            recv(s, value_char, sizeof(value_char), 0);
+            *inner_it = atoi(value_char);
+        }
+    }
+    cout << "Матрица бинарных предпочтений:\n";
+    comfort_show(matrix.size());
+    cout << "|    |";
+    for (int i = 1; i <= n; i++)
+        cout << " C" << i << " |";
+    cout << endl;
+    comfort_show(matrix.size());
+
+
+    for (unsigned int i = 0; i < matrix.size(); i++) {
+        cout << "| " << "C" << i + 1 << " |";
+        for (unsigned int j = 0; j < matrix[i].size(); j++) {
+            if (i == j)
+                cout << " -- |";
+            else
+                cout << " " << setup << setw(2) << matrix[i][j] << " |";
+        }
+        cout << endl;
+        comfort_show(matrix.size());
+    }
+}
+
+
+void comfort_show(int n) {
+    for (int i = 0; i <= n; i++)
+        cout << "-----";
+    cout << "-\n";
+}
+
+void edit_matrix(SOCKET s) {
+    show_matrix(s);
+    int i, j, n;
+    char size_char[10], i_char[10], j_char[10];
+    recv(s, size_char, sizeof(size_char), 0);
+    n = atoi(size_char);
+
+    while (1) {
+        try {
+            cout << "\nКакую оценку вы бы хотели изменить?\n";
+            cout << "Номер строки: ";
+            cin >> i;
+            if (!check(i) || i > n)
+                throw InputException();
+            cout << "Номер столбца: ";
+            cin >> j;
+            if (!check(j) || j > n || j == i)
+                throw InputException();
+            _itoa(i, i_char, 10);
+            send(s, i_char, sizeof(i_char), 0);
+            _itoa(j, j_char, 10);
+            send(s, j_char, sizeof(j_char), 0);
+           
+            cout << "\n-----------------------------------\n";
+            cout << "Оценки сегментов рынка с ID " << i << " и " << j << " были успешно изменены\n";
+            Sleep(2500);
+            break;
+        }
+        catch (const Exception& exception) {
+            cout << exception.get_error();
+        }
+    }
+}
+
+void make_paired_calculations(SOCKET s) {
+    char value_char[10], n_char[10], result[30];
+    int n;
+
+    recv(s, n_char, sizeof(n_char), 0);
+    n = atoi(n_char);
+
+    cout << "Цена каждого сегмента:\n";
+
+    for(int i = 0; i < n; i++){
+        recv(s, value_char, sizeof(value_char), 0);
+        cout << "С" << i + 1 << ": " << value_char;
+        !((i + 1) % 2) ? cout << endl : cout << "   ";
+    }
+    cout << "\n\n";
+
+    cout << "Вес каждого сегмента:\n";
+    for (int i = 0; i < n; i++) {
+        recv(s, value_char, sizeof(value_char), 0);
+        for (unsigned int i = 0; i < strlen(value_char); i++) {
+            if (value_char[i] == ',')
+                value_char[i] = '.';
+        }
+        
+        cout << "W" << i + 1 << " = " << value_char;
+        !((i + 1) % 2) ? cout << endl : cout << "   ";
+    }
+    cout << "\n\n";
+
+    Sleep(300);
+    recv(s, result, sizeof(result), 0);
+    cout << "Порядок предпочтения сегментов: " << result << endl;
+    cout << endl;
+}
+
+int show_estimates(SOCKET s) {
+    char n_char[10], id_char[10], estimate_char[10];
+    int n;
+
+    recv(s, n_char, sizeof(n_char), 0);
+    n = atoi(n_char);
+
+    cout << "\nПредварительные оценки:\n";
+    for (int i = 0; i < n; i++) {
+        recv(s, id_char, sizeof(id_char), 0);
+        recv(s, estimate_char, sizeof(estimate_char), 0);
+        cout << "P" << id_char << " = " << estimate_char;
+        !((i + 1) % 2) ? cout << endl : cout << "   ";
+    }
+    cout << endl;
+    return n;
+}
+
+
+void edit_estimates(SOCKET s) {
+    char id_char[10], estimate_char[10], serv_answer[50], ch[2];
+    int id, estimate, n;
+    show_segments(s);
+    n = show_estimates(s);
+
+    while (1) {
+        try {
+            cout << "\nВведите ID сегмента для изменения оценки: ";
+            cin >> id;
+            if (!check(id) || id > n)
+                throw InputException();
+            _itoa(id, id_char, 10);
+            send(s, id_char, sizeof(id_char), 0);
+
+            while (1) {
+                try {
+                    cout << "Новая оценка: ";
+                    cin >> estimate;
+                    if (!check(estimate))
+                        throw InputException();
+                    _itoa(estimate, estimate_char, 10);
+                    send(s, estimate_char, sizeof(estimate_char), 0);
+                    Sleep(500);
+                    recv(s, serv_answer, sizeof(serv_answer), 0);
+
+                    if (!strcmp(serv_answer, "cool")) {
+                        cout << "-------------------------------\n";
+                        cout << "Оценка сегмента с ID " << id << " была успешно изменена\n";
+                        system("pause");
+                        break;
+                    }
+                    throw ConformityException();
+                }
+                catch (const ConformityException& exception) {
+                    cout << "Оценка не должна выходить за значения ближайших сегментов!\n" << endl;
+                    cout << "Повторный ввод? Введите символ (n - нет): ";
+                    cin >> ch;
+                    send(s, ch, sizeof(ch), 0);
+                    if (!strcmp(ch, "n"))
+                        break;
+                }
+                catch (const Exception& exception) {
+                    cout << exception.get_error() << endl;
+                }
+            }
+            break;
+        }
+        catch (const Exception& exception) {
+            cout << exception.get_error();
+        }
+    }
+}
+
+void make_succesive_calculations(SOCKET s) {
+    char value_char[10], n_char[10], result[30];
+    int n;
+
+    recv(s, n_char, sizeof(n_char), 0);
+    n = atoi(n_char);
+
+    system("cls");
+    cout << "Вес каждого сегмента:\n";
+    for (int i = 0; i < n; i++) {
+        recv(s, value_char, sizeof(value_char), 0);
+        for (unsigned int i = 0; i < strlen(value_char); i++) {
+            if (value_char[i] == ',')
+                value_char[i] = '.';
+        }
+
+        cout << "W" << i + 1 << " = " << value_char;
+        !((i + 1) % 2) ? cout << endl : cout << "   ";
+    }
+    cout << "\n\n";
+
+    Sleep(300);
+    recv(s, result, sizeof(result), 0);
+    cout << "Итоговый порядок предпочтения сегментов: " << result << endl;
+    cout << endl;
 }

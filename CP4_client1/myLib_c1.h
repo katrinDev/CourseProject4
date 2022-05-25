@@ -6,6 +6,7 @@
 #include <winsock2.h>
 #include <string>
 #include <iomanip>
+#include <vector>
 
 using namespace std; 
 
@@ -27,7 +28,7 @@ public:
 };
 
 template <class T>
-int check(T num) {//шаблонная функции
+int check(T num) {
     int k = 1;
     if (cin.fail() || num <= 0) {
         k = 0;
@@ -60,3 +61,13 @@ void show_segments(SOCKET s);
 void add_segments(SOCKET s);
 void edit_segments(SOCKET s);
 void delete_segments(SOCKET s);
+
+
+void show_matrix(SOCKET s);
+void comfort_show(int n);
+void edit_matrix(SOCKET s);
+void make_paired_calculations(SOCKET s);
+
+void edit_estimates(SOCKET s);
+void make_succesive_calculations(SOCKET s);
+int show_estimates(SOCKET s);
